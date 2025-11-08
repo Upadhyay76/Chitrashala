@@ -1,8 +1,4 @@
-// app/page.tsx
-'use client';
-
-import React, { useState } from 'react';
-import { Grid, Link } from 'lucide-react'; // Example icon for features
+import { Grid } from 'lucide-react'; // Example icon for features
 
 import { MainNav } from '~/app/_components/main-nav';
 import { MobileNav } from '~/app/_components/mobile-nav';
@@ -12,6 +8,8 @@ import { ImageGrid } from '~/components/home/image-grid';
 import { FeaturesSection } from '~/components/home/features-section';
 import type { ImageItem, FeatureItem } from '~/types';
 import { Logo } from '~/components/logo';
+import { redirect } from 'next/navigation';
+import { getSession } from '~/server/better-auth/server';
 
 const IMAGES: ImageItem[] = [
   { id: 1, url: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400', title: 'Modern Living Room', alt: 'Modern Living Room Interior' },
@@ -30,27 +28,23 @@ const FEATURES: FeatureItem[] = [
   { title: 'Share', description: 'Collaborate with friends and family', icon: Grid },
 ];
 
-export default function PinterestHomepage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Using a state here for demonstration
+export default async function PinterestHomepage() {
+  const session = await getSession();
 
-  const handleLoginToggle = (loggedIn: boolean) => {
-    setIsLoggedIn(loggedIn);
-    // In a real app, this would involve authenticating the user
-    console.log(loggedIn ? 'User logged in' : 'User logged out');
-  };
+  if (session) redirect("/home");
 
   return (
     <div className="flex min-h-screen flex-col">
       {/* Main Navigation for Desktop */}
       <div className="hidden md:block">
-        <MainNav isLoggedIn={isLoggedIn} onLoginToggle={handleLoginToggle} />
+        <MainNav isLoggedIn={false} />
       </div>
       {/* Mobile Navigation for Mobile */}
       <div className="block md:hidden">
         <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background/90 px-4 backdrop-blur-lg">
           {/* Use the Logo component here */}
           <Logo />
-          <MobileNav isLoggedIn={isLoggedIn} onLoginToggle={handleLoginToggle} />
+          <MobileNav isLoggedIn={false} />
         </div>
       </div>
 

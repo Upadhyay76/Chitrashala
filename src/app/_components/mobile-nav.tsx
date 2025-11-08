@@ -18,13 +18,15 @@ import { Input } from '~/components/ui/input';
 import { Separator } from '~/components/ui/separator';
 import { ThemeToggle } from './theme-toggle';
 import { Logo } from '~/components/logo';
+import { useRouter } from 'next/navigation';
+import SignOutButton from './signout-button';
 
 interface MobileNavProps {
   isLoggedIn: boolean;
-  onLoginToggle: (loggedIn: boolean) => void;
 }
 
-export function MobileNav({ isLoggedIn, onLoginToggle }: MobileNavProps) {
+export function MobileNav({ isLoggedIn }: MobileNavProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -81,20 +83,11 @@ export function MobileNav({ isLoggedIn, onLoginToggle }: MobileNavProps) {
               <ThemeToggle />
             </div>
             {isLoggedIn ? (
-              <Button
-                onClick={() => {
-                  onLoginToggle(false);
-                  setIsOpen(false);
-                }}
-                className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 text-white transition-all hover:scale-105 hover:shadow-lg"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </Button>
+              <SignOutButton />
             ) : (
               <Button
                 onClick={() => {
-                  onLoginToggle(true);
+                  router.push("/login")
                   setIsOpen(false);
                 }}
                 className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 text-white transition-all hover:scale-105 hover:shadow-lg"
