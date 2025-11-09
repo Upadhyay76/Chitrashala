@@ -5,12 +5,14 @@ import { nextCookies } from "better-auth/next-js";
 import { env } from "~/env";
 import { db } from "~/server/db";
 
+const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
   pages: {
-    signIn: "/login"
+    signIn: "/login",
   },
   emailAndPassword: {
     enabled: true,
@@ -19,16 +21,16 @@ export const auth = betterAuth({
     github: {
       clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
       clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
-      redirectURI: "http://localhost:3000/api/auth/callback/github",
+      redirectURI: `${baseUrl}/api/auth/callback/github`,
     },
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      redirectURI: "http://localhost:3000/api/auth/callback/google",
+      clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
+      clientSecret: env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
+      redirectURI: `https://chitrashala-rmf3.vercel.app/api/auth/callback/google`,
     },
   },
 
-  plugins: [nextCookies()] // make sure this is the last plugin in the array
+  plugins: [nextCookies()], // make sure this is the last plugin in the array
 });
 
 export type Session = typeof auth.$Infer.Session;

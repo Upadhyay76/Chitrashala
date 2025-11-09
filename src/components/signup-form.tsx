@@ -20,7 +20,6 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import Link from "next/link";
-import { log } from "console";
 
 export function SignupForm({
   className,
