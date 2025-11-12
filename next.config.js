@@ -9,18 +9,21 @@ const config = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https', // Ensure the protocol matches (http or https)
-        hostname: 'images.unsplash.com', // The hostname from your image URLs
-        port: '', // Leave empty unless a specific port is used
-        pathname: '/**', // Allow any path on this hostname
+        protocol: "https", // Ensure the protocol matches (http or https)
+        hostname: "images.unsplash.com", // The hostname from your image URLs
+        port: "", // Leave empty unless a specific port is used
+        pathname: "/**", // Allow any path on this hostname
       },
-      // Add other domains here if you use images from different sources
-      // {
-      //   protocol: 'https',
-      //   hostname: 'example.com',
-      //   port: '',
-      //   pathname: '/my-images/**',
-      // },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };

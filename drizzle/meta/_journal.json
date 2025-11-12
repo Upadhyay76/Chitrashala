@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1762614403414,
-      "tag": "0000_omniscient_pet_avengers",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1762615105421,
-      "tag": "0001_handy_leader",
+      "when": 1762987494810,
+      "tag": "0000_burly_thena",
       "breakpoints": true
     }
   ]
