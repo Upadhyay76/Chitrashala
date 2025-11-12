@@ -1,19 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import {
-  Search,
-  User,
-  LogIn,
-  Menu,
-} from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { ThemeToggle } from './theme-toggle';
+import Link from "next/link";
+import { Search, User, LogIn, Menu } from "lucide-react";
+import { useState } from "react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { ThemeToggle } from "./theme-toggle";
 import { useRouter } from "next/navigation";
-import SignOutButton from './signout-button';
-import { Logo } from '~/components/logo';
+import SignOutButton from "./signout-button";
+import { Logo } from "~/components/logo";
 
 interface MainNavProps {
   isLoggedIn: boolean;
@@ -26,7 +21,7 @@ export function MainNav({
   isLoggedIn,
   links,
   showSearchBar,
-  toggleSidebar
+  toggleSidebar,
 }: MainNavProps) {
   const router = useRouter();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -34,13 +29,15 @@ export function MainNav({
   return (
     <nav className="fixed bg-white dark:bg-neutral-900 h-16 w-full top-0 text-black dark:text-white ">
       <div className="flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-
         {/* LEFT SECTION */}
         <div className="flex items-center gap-4">
           <Logo collapsed={false} />
-          {isLoggedIn &&
-            <Menu className='hidden lg:block lg:ml-12' onClick={toggleSidebar} />
-          }
+          {isLoggedIn && (
+            <Menu
+              className="hidden lg:block lg:ml-12"
+              onClick={toggleSidebar}
+            />
+          )}
           {/* Mobile Sidebar Toggle */}
           <Button
             variant="ghost"
@@ -70,7 +67,9 @@ export function MainNav({
         {/* SEARCH BAR */}
         {showSearchBar && (
           <div
-            className={`flex-1 transition-all border-2 rounded-2xl ${isSearchFocused ? "max-w-full mx-4" : "hidden lg:flex lg:max-w-2xl lg:mx-8"
+            className={`flex-1 transition-all border-2 rounded-2xl ${isSearchFocused
+                ? "max-w-full mx-4"
+                : "hidden lg:flex lg:max-w-2xl lg:mx-8"
               }`}
           >
             <div className="relative w-full">
@@ -88,12 +87,15 @@ export function MainNav({
 
         {/* RIGHT ACTIONS */}
         <div className="flex items-center gap-2">
-
           <ThemeToggle />
 
           {isLoggedIn ? (
-            <div className='flex gap-4 w-[50%] mr-10'>
-              <Button variant="ghost" size="icon" className=" bg-gray-300 hover:bg-gray-100 dark:bg-gray-300/20 dark:hover:bg-gray-100/80 hover:text-black lg:w-20">
+            <div className="flex gap-4 w-[50%] mr-10">
+              <Button
+                variant="ghost"
+                size="icon"
+                className=" bg-gray-300 hover:bg-gray-100 dark:bg-gray-300/20 dark:hover:bg-gray-100/80 hover:text-black lg:w-20"
+              >
                 <User className="h-5 w-5" />
               </Button>
               <SignOutButton />
