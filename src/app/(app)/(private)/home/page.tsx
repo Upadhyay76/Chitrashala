@@ -1,17 +1,16 @@
-import { HeroSection } from "~/components/landingpage/hero-section";
+import { api } from "~/trpc/server";
+import PostCard from "./_home-feed";
 
-const page = async () => {
+export default async function FeedPage() {
+  const { posts } = await api.post.getPosts();
 
   return (
-    <div className="h-[200%] w-full">
-      <HeroSection />
-      <HeroSection />
-      <HeroSection />
-      <HeroSection />
-      <HeroSection />
-      <HeroSection />
-    </div >
-  )
+    <main className="min-h-screen w-full bg-white dark:bg-black p-6 columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+      {posts.length > 0 ? (
+        posts.map((post) => <PostCard href={post.id} key={post.id} post={post} />)
+      ) : (
+        <p className="text-center text-gray-500">No posts available.</p>
+      )}
+    </main>
+  );
 }
-
-export default page
