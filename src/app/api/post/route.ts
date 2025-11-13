@@ -6,6 +6,7 @@ import { post, postToTag, postTypeEnum, tag } from "~/server/db/schema";
 import { v4 as uuidv4 } from "uuid";
 import { getSession } from "~/server/better-auth/server";
 import { eq } from "drizzle-orm";
+import { Readable } from "stream";
 
 cloudinary.config({
   cloud_name: env.NEXT_PUBLIC_CLOUDINARY_NAME,
@@ -23,6 +24,13 @@ interface CloudinaryUploadResult {
   [key: string]: any;
 }
 
+export const runtime = "nodejs"; // Required for streaming uploads
+
+// Convert File to Node.js Readable
+function fileToNodeStream(file: File) {
+  const stream = file.stream(); // This is a web ReadableStream
+  return Readable.from(stream as unknown as AsyncIterable<Uint8Array>);
+}
 export async function POST(request: NextRequest) {
   const session = await getSession();
 
@@ -44,7 +52,7 @@ export async function POST(request: NextRequest) {
     const price = formData.get("price") as string | null;
     const isDownloadable = formData.get("isDownloadable") === "true" || false;
 
-    // ✅ Parse tags (comma-separated or JSON array)
+    // Parse tags
     let tagsArray: string[] = [];
     const tagsRaw = formData.get("tags");
     if (typeof tagsRaw === "string" && tagsRaw.trim() !== "") {
@@ -67,28 +75,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    // Upload to Cloudinary
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // STREAMING Upload to Cloudinary (supports large files)
+    const result: CloudinaryUploadResult = await new Promise((resolve, reject) => {
+      const nodeStream = fileToNodeStream(file); // Convert to Node stream
 
-    const result = await new Promise<CloudinaryUploadResult>(
-      (resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "Chitrashala",
-            resource_type: "auto",
-          },
-          (error, result) => {
-            if (error) return reject(error);
-            if (!result) return reject(new Error("Upload failed"));
-            resolve(result as CloudinaryUploadResult);
-          },
-        );
-        uploadStream.end(buffer);
-      },
-    );
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "Chitrashala", resource_type: "auto" },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error("Upload failed"));
+          resolve(result as CloudinaryUploadResult);
+        }
+      );
 
-    // Determine type
+      nodeStream.pipe(uploadStream);
+    });
+
+    // Determine post type
     let postType: (typeof postTypeEnum.enumValues)[number] = "image";
     if (result.resource_type === "video") postType = "video";
 
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (!newPost) throw new Error("Failed to save post to database.");
 
-    // ✅ Insert tags (existing or new)
+    // Insert tags
     for (const tagName of tagsArray) {
       const existingTag = await db
         .select()
@@ -167,5 +170,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-export const runtime = "nodejs";
-export const bodySizeLimit = "100mb";
