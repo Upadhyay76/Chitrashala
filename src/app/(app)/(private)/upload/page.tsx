@@ -135,7 +135,7 @@ const page = () => {
     setUploadType("image");
   };
   return (
-    <div className="w-full h-full overflow-y-auto mb-20">
+    <div className="">
       <MediaUploadPage
         formData={formData}
         setFormData={setFormData}

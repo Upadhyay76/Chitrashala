@@ -50,7 +50,7 @@ export default function ExplorePage() {
       ) : (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
           {data.posts.map((post) => (
-            <PostCard href={post.mediaUrl} key={post.id} post={post} />
+            <PostCard href={post.id} key={post.id} post={post} />
           ))}
         </div>
       ))}

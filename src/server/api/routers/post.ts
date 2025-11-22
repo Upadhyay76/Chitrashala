@@ -6,21 +6,31 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { post, postToTag, tag } from "~/server/db/schema";
 
 export const postRouter = createTRPCRouter({
-  // 🟢 Get all public posts
+  // 🟢 Get all public posts with tags
   getPosts: protectedProcedure.query(async ({ ctx }) => {
     const { db } = ctx;
 
+    // 1️⃣ Fetch all public posts
     const posts = await db
       .select({
         id: post.id,
+        userId: post.userId,
         title: post.title,
         description: post.description,
         mediaUrl: post.mediaUrl,
+        thumbnailUrl: post.thumbnailUrl,
         type: post.type,
+        visibility: post.visibility,
+        accessType: post.accessType,
+        price: post.price,
+        isDownloadable: post.isDownloadable,
         createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
         user: {
           id: user.id,
           name: user.name,
+          email: user.email,
+          image: user.image,
           avatarImage: user.image,
         },
       })
@@ -29,26 +39,58 @@ export const postRouter = createTRPCRouter({
       .where(eq(post.visibility, "public"))
       .orderBy(desc(post.createdAt));
 
-    return { posts };
+    if (!posts.length) return { posts: [] };
+
+    // 2️⃣ Fetch post-tag mappings
+    const postTags = await db
+      .select({
+        postId: postToTag.postId,
+        tagId: tag.id,
+        tagName: tag.name,
+      })
+      .from(postToTag)
+      .leftJoin(tag, eq(postToTag.tagId, tag.id))
+      .where(inArray(postToTag.postId, posts.map((p) => p.id)));
+
+    // 3️⃣ Map tags to posts
+    const postsWithTags = posts.map((p) => ({
+      ...p,
+      tags: postTags
+        .filter((t) => t.postId === p.id)
+        .map((t) => t.tagName)
+        .filter(Boolean) as string[],
+    }));
+
+    return { posts: postsWithTags };
   }),
 
-  // 🟢 Get single post by ID
+  // 🟢 Get single post by ID with all fields and tags
   getPostById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
+      // 1️⃣ Fetch post details
       const [postDetail] = await db
         .select({
           id: post.id,
+          userId: post.userId,
           title: post.title,
           description: post.description,
           mediaUrl: post.mediaUrl,
+          thumbnailUrl: post.thumbnailUrl,
           type: post.type,
+          visibility: post.visibility,
+          accessType: post.accessType,
+          price: post.price,
+          isDownloadable: post.isDownloadable,
           createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
           user: {
             id: user.id,
             name: user.name,
+            email: user.email,
+            image: user.image,
             avatarImage: user.image,
           },
         })
@@ -58,9 +100,25 @@ export const postRouter = createTRPCRouter({
         .limit(1);
 
       if (!postDetail) throw new Error("Post not found");
-      return postDetail;
+
+      // 2️⃣ Fetch tags for this post
+      const postTags = await db
+        .select({
+          tagId: tag.id,
+          tagName: tag.name,
+        })
+        .from(postToTag)
+        .leftJoin(tag, eq(postToTag.tagId, tag.id))
+        .where(eq(postToTag.postId, input.id));
+
+      // 3️⃣ Combine post with tags
+      return {
+        ...postDetail,
+        tags: postTags.map((t) => t.tagName).filter(Boolean) as string[],
+      };
     }),
 
+  // 🟢 Get user's own posts with all fields
   getUserPosts: protectedProcedure.query(async ({ ctx }) => {
     const { db, session } = ctx;
     const userId = session.user.id;
@@ -69,12 +127,18 @@ export const postRouter = createTRPCRouter({
     const posts = await db
       .select({
         id: post.id,
+        userId: post.userId,
         title: post.title,
         description: post.description,
         mediaUrl: post.mediaUrl,
+        thumbnailUrl: post.thumbnailUrl,
         type: post.type,
-        createdAt: post.createdAt,
         visibility: post.visibility,
+        accessType: post.accessType,
+        price: post.price,
+        isDownloadable: post.isDownloadable,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
       })
       .from(post)
       .where(eq(post.userId, userId))
@@ -91,9 +155,7 @@ export const postRouter = createTRPCRouter({
       })
       .from(postToTag)
       .leftJoin(tag, eq(postToTag.tagId, tag.id))
-      .where(
-        inArray(postToTag.postId, posts.map((p) => p.id))
-      );
+      .where(inArray(postToTag.postId, posts.map((p) => p.id)));
 
     // 3️⃣ Map tags to posts
     const postsWithTags = posts.map((p) => ({
@@ -101,7 +163,7 @@ export const postRouter = createTRPCRouter({
       tags: postTags
         .filter((t) => t.postId === p.id)
         .map((t) => t.tagName)
-        .filter(Boolean),
+        .filter(Boolean) as string[],
     }));
 
     return { posts: postsWithTags };
@@ -140,6 +202,7 @@ export const postRouter = createTRPCRouter({
             title: input.title,
             description: input.description,
             visibility: input.visibility,
+            updatedAt: new Date(),
           })
           .where(eq(post.id, input.id));
 
@@ -186,6 +249,8 @@ export const postRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  // 🔍 Search posts by title, description, or tags
   searchPosts: protectedProcedure
     .input(
       z.object({
@@ -204,38 +269,75 @@ export const postRouter = createTRPCRouter({
 
       const tagIds = matchedTags.map((t) => t.id);
 
-      // 2️⃣ Find posts that match title, description, or tags
+      // 2️⃣ Find post IDs that have matching tags
+      const postsWithMatchingTags = tagIds.length > 0
+        ? await db
+          .select({ postId: postToTag.postId })
+          .from(postToTag)
+          .where(inArray(postToTag.tagId, tagIds))
+        : [];
+
+      const matchingPostIds = postsWithMatchingTags.map((p) => p.postId);
+
+      // 3️⃣ Find posts that match title, description, or have matching tags
       const posts = await db
         .select({
           id: post.id,
+          userId: post.userId,
           title: post.title,
           description: post.description,
           mediaUrl: post.mediaUrl,
+          thumbnailUrl: post.thumbnailUrl,
           type: post.type,
+          visibility: post.visibility,
+          accessType: post.accessType,
+          price: post.price,
+          isDownloadable: post.isDownloadable,
           createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
           user: {
             id: user.id,
             name: user.name,
-            avatarImage: user.image,
+            email: user.email,
+            image: user.image,
           },
         })
         .from(post)
         .leftJoin(user, eq(post.userId, user.id))
         .where(
-          or(
-            ilike(post.title, search),
-            ilike(post.description, search),
-            inArray(
-              post.id,
-              db
-                .select({ postId: postToTag.postId })
-                .from(postToTag)
-                .where(inArray(postToTag.tagId, tagIds))
+          and(
+            eq(post.visibility, "public"),
+            or(
+              ilike(post.title, search),
+              ilike(post.description, search),
+              matchingPostIds.length > 0 ? inArray(post.id, matchingPostIds) : undefined
             )
           )
         )
         .orderBy(desc(post.createdAt));
 
-      return { posts };
+      if (!posts.length) return { posts: [] };
+
+      // 4️⃣ Fetch tags for all found posts
+      const postTags = await db
+        .select({
+          postId: postToTag.postId,
+          tagId: tag.id,
+          tagName: tag.name,
+        })
+        .from(postToTag)
+        .leftJoin(tag, eq(postToTag.tagId, tag.id))
+        .where(inArray(postToTag.postId, posts.map((p) => p.id)));
+
+      // 5️⃣ Map tags to posts
+      const postsWithTags = posts.map((p) => ({
+        ...p,
+        tags: postTags
+          .filter((t) => t.postId === p.id)
+          .map((t) => t.tagName)
+          .filter(Boolean) as string[],
+      }));
+
+      return { posts: postsWithTags };
     }),
 });

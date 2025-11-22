@@ -3,17 +3,17 @@ import { getSession } from "~/server/better-auth/server";
 import ClientLayout from "../clientLayout";
 
 export default async function BlogLayout({
-	children,
+  children,
 }: {
-	children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-	const session = await getSession();
+  const session = await getSession();
 
-	if (!session) redirect("/login");
+  if (!session) redirect("/login");
 
-	return (
-		<div className="min-h-screen dark:bg-black bg-white">
-			<ClientLayout>{children}</ClientLayout>
-		</div>
-	);
+  return (
+    <div className="min-h-screen">
+      <ClientLayout>{children}</ClientLayout>
+    </div>
+  );
 }

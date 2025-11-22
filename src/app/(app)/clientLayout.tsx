@@ -58,7 +58,9 @@ export default function ClientLayout({
         </div>
         {/* CHILDREN AREA — DIFFERENT BACKGROUND */}
         <div
-          className={`fixed ${sidebarOpen ? " sm:left-[14rem]  sm:w-[calc(100vw-14rem)] lg:left-[18.5rem] w-full lg:w-[calc(100vw-18.5rem)]" : "sm:left-[5rem] w-full sm:w-[calc(100vw-5rem)]"} bg-[#f8f9fa] dark:bg-zinc-800 h-full sm:rounded-tl-2xl overflow-y-auto`}
+          className={`fixed ${sidebarOpen ?
+            " sm:left-[14rem]  sm:w-[calc(100vw-14rem)] lg:left-[18.5rem] w-full lg:w-[calc(100vw-18.5rem)]" :
+            "sm:left-[5rem] w-full sm:w-[calc(100vw-5rem)]"} bg-[#f8f9fa] dark:bg-zinc-800 h-full overflow-y-auto`}
         >
           {children}
         </div>
